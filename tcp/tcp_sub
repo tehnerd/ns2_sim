@@ -1,0 +1,12 @@
+x,y,z = parse_bw_2nodes("out.ns",10)
+t,q,d = parse_qlen_2nodes("out.ns",10)
+a,b = parse_cwnd("n0w.ns")
+subplot(411)
+plot(t,q)
+subplot(412)
+plot(t,d)
+subplot(413)
+plot(x,y)
+subplot(414)
+plot(a,b)
+
