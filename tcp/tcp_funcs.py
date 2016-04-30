@@ -1,3 +1,4 @@
+import pylab
 def parse_cwnd(fname):
     fd = open(fname)
     x = list()
@@ -69,13 +70,18 @@ def parse_bw_2nodes(fname,resolution):
 def parse_qlen_2nodes(fname,resolution):
     #starting point of time slice and slice's size
     ts_start= 0.0
+    #queue delay dict
+    qdd = {}
     ts_size = 1.0/resolution
     print(ts_size)
-    qlen = list()
-    drlist = list()
-    timelist = list()
+    qlen = []
+    qdelay = []
+    drlist = []
+    timelist = []
     curlen = 0
     curdr = 0
+    curqdelay_list = []
+    curdelay = 0.0
     with open(fname) as fd:
         for line in fd:
             line = line.split()
@@ -83,22 +89,69 @@ def parse_qlen_2nodes(fname,resolution):
                 continue
             t = float(line[1])
             if t > ts_start+ts_size:
+                for k in curqdelay_list:
+                    curdelay += k
+                # avg delay; 1000000 because resolution is in msec
+                curdelay = curdelay / len(curqdelay_list)* 1000000
+                if curlen < 0:
+                    curlen = 0
                 qlen.append(curlen)
                 drlist.append(curdr)
+                qdelay.append(curdelay)
                 curdr = 0
                 timelist.append(ts_start+ts_size)
                 zero_timeframes = (t-(ts_start + ts_size))//ts_size
                 while zero_timeframes != 0:
                     zero_timeframes -= 1
                     qlen.append(curlen)
+                    qdelay.append(curdelay)
                     drlist.append(curdr)
                     ts_start += ts_size
                     timelist.append(ts_start+ts_size)
                 ts_start+=ts_size
+                curdelay = 0
             if line[0] == "+":
+                qdd[line[11]] = float(line[1])
                 curlen+=1
-            if line[0] == "-" or line[0] == "d":
+            if line[0] == "-":
                 curlen-=1
+                curqdelay_list.append(float(line[1])-qdd[line[11]])
+                del(qdd[line[11]])
             if line[0] == "d":
+                curlen-=1
                 curdr += 1
-    return timelist,qlen,drlist
+    return timelist,qlen,drlist,qdelay
+
+def plot2(n, draw_delay = False):
+    pylab.ion()
+    x,y,z = parse_bw_2nodes("out.ns",n)
+    t,q,d,qd = parse_qlen_2nodes("out.ns",n)
+    a,b = parse_cwnd("n0w.ns")
+    pylab.subplot(411)
+    pylab.plot(t,q)
+    # queue delay
+    if draw_delay:
+        pylab.plot(t,qd)
+    pylab.subplot(412)
+    pylab.plot(t,d)
+    pylab.subplot(413)
+    pylab.plot(x,y)
+    pylab.subplot(414)
+    pylab.plot(a,b)
+    pylab.draw()
+
+def plot2_log(n):
+    pylab.ion()
+    x,y,z = parse_bw_2nodes("out.ns",n)
+    t,q,d,qd = parse_qlen_2nodes("out.ns",n)
+    a,b = parse_cwnd("n0w.ns")
+    pylab.subplot(411).set_yscale("log")
+    pylab.plot(t,q)
+    pylab.plot(t,qd)
+    pylab.subplot(412)
+    pylab.plot(t,d)
+    pylab.subplot(413)
+    pylab.plot(x,y)
+    pylab.subplot(414)
+    pylab.plot(a,b)
+    pylab.draw()
