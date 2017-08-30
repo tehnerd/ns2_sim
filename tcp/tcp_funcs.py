@@ -128,16 +128,20 @@ def plot2(n, draw_delay = False):
     t,q,d,qd = parse_qlen_2nodes("out.ns",n)
     a,b = parse_cwnd("n0w.ns")
     pylab.subplot(411)
-    pylab.plot(t,q)
+    pylab.plot(t,q, label="queue length")
+    pylab.legend()
     # queue delay
     if draw_delay:
-        pylab.plot(t,qd)
+        pylab.plot(t,qd, label="queue delay")
     pylab.subplot(412)
-    pylab.plot(t,d)
+    pylab.plot(t,d, label="drops")
+    pylab.legend()
     pylab.subplot(413)
-    pylab.plot(x,y)
+    pylab.plot(x,y, label="bw")
+    pylab.legend()
     pylab.subplot(414)
-    pylab.plot(a,b)
+    pylab.plot(a,b, label="cwnd")
+    pylab.legend()
     pylab.draw()
 
 def plot2_log(n):
